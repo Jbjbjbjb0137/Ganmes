@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>一念成仙</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --gold: #e8c879;
+      --panel: rgba(22, 30, 43, .9);
+      --muted: #aab4c2;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: #eee9dc;
+      font-family: "Noto Serif SC", "Songti SC", serif;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(87, 107, 131, .34), transparent 55%),
+        linear-gradient(160deg, #101923, #11151d 65%, #1c1820);
+    }
+
+    .wrap { width: min(940px, 92%); margin: 0 auto; padding: 34px 0 48px; }
+    header { text-align: center; margin-bottom: 26px; }
+    h1 { margin: 0; color: var(--gold); font-size: clamp(36px, 7vw, 58px); letter-spacing: .22em; }
+    .subtitle { color: var(--muted); margin-top: 8px; letter-spacing: .15em; }
+
+    .layout { display: grid; grid-template-columns: 1fr 1.15fr; gap: 16px; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(232, 200, 121, .2);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, .22);
+    }
+
+    h2 { margin: 0 0 16px; color: var(--gold); font-size: 19px; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat {
+      background: rgba(255,255,255,.035);
+      border-radius: 9px;
+      padding: 12px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .stat strong { display: block; color: #f4eddd; font-size: 17px; margin-top: 5px; }
+    .bar { height: 7px; background: #303844; border-radius: 10px; margin-top: 9px; overflow: hidden; }
+    .bar > i { display: block; height: 100%; background: linear-gradient(90deg, #70b6a2, #c2d986); width: 0%; transition: width .3s; }
+    .bar.hp > i { background: linear-gradient(90deg, #a54f52, #e28a69); }
+    .bar.qi > i { background: linear-gradient(90deg, #4d86ad, #91d1d1); }
+
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    button {
+      border: 1px solid rgba(232, 200, 121, .35);
+      color: #f4eddd;
+      background: linear-gradient(145deg, #303b48, #222b36);
+      padding: 12px 10px;
+      border-radius: 9px;
+      font: inherit;
+      cursor: pointer;
+      transition: .18s ease;
+    }
+    button:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--gold); color: var(--gold); }
+    button:disabled { opacity: .42; cursor: not-allowed; }
+    button.primary { background: linear-gradient(145deg, #77633a, #51472f); }
+    button.danger { border-color: rgba(196, 103, 103, .4); }
+    .hint { color: var(--muted); font-size: 13px; line-height: 1.7; margin: 14px 0 0; }
+    .log { min-height: 240px; max-height: 340px; overflow: auto; padding-right: 6px; }
+    .entry { padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.07); line-height: 1.65; }
+    .entry:first-child { padding-top: 0; }
+    .time { color: var(--gold); font-size: 12px; margin-right: 8px; }
+    .footer-actions { display: flex; gap: 10px; margin-top: 14px; }
+    .footer-actions button { flex: 1; font-size: 13px; padding: 9px; }
+    .quote { color: #d7cba9; font-style: italic; line-height: 1.8; margin: 0 0 18px; }
+
+    @media (max-width: 680px) {
+      .layout { grid-template-columns: 1fr; }
+      .log { min-height: 180px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>一念成仙</h1>
+      <div class="subtitle">凡尘一梦 · 仙途万里</div>
+    </header>
+
+    <div class="layout">
+      <section class="panel">
+        <h2>修仙者</h2>
+        <p class="quote" id="flavor">“仙路漫漫，始于一念。”</p>
+        <div class="stats">
+          <div class="stat">当前境界<strong id="realm">—</strong></div>
+          <div class="stat">修为进度<strong id="expText">—</strong><div class="bar"><i id="expBar"></i></div></div>
+          <div class="stat">气血<strong id="hpText">—</strong><div class="bar hp"><i id="hpBar"></i></div></div>
+          <div class="stat">灵力<strong id="qiText">—</strong><div class="bar qi"><i id="qiBar"></i></div></div>
+          <div class="stat">灵石<strong id="stones">—</strong></div>
+          <div class="stat">修仙岁月<strong id="days">—</strong></div>
+          <div class="stat">战力<strong id="power">—</strong></div>
+          <div class="stat">道心<strong id="mind">—</strong></div>
+        </div>
+        <p class="hint">修炼积累修为，修为圆满后尝试突破。探索山野，或许能寻得机缘，也可能遭遇妖兽。</p>
+      </section>
+
+      <section class="panel">
+        <h2>修行之事</h2>
+        <div class="actions">
+          <button class="primary" id="cultivateBtn">静心修炼</button>
+          <button class="primary" id="breakBtn">尝试突破</button>
+          <button id="exploreBtn">外出探索</button>
+          <button id="restBtn">打坐调息</button>
+        </div>
+        <div class="footer-actions">
+          <button id="saveBtn">保存修为</button>
+          <button class="danger" id="resetBtn">重回凡尘</button>
+        </div>
+        <p class="hint">提示：突破需要修为圆满并消耗灵力。失败会损失气血，记得及时调息。</p>
+      </section>
+
+      <section class="panel" style="grid-column: 1 / -1">
+        <h2>修仙纪事</h2>
+        <div class="log" id="log" aria-live="polite"></div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const realms = [
+      "凡人", "炼气一层", "炼气二层", "炼气三层", "炼气四层", "炼气五层",
+      "筑基初期", "筑基中期", "筑基后期", "金丹初期", "金丹中期", "金丹后期",
+      "元婴初期", "元婴中期", "元婴后期", "化神初期", "化神中期", "化神后期",
+      "渡劫期", "真仙"
+    ];
+
+    const freshState = () => ({
+      realmIndex: 0, exp: 0, hp: 100, maxHp: 100, qi: 40, maxQi: 40,
+      stones: 20, days: 1, power: 5, mind: 1, log: []
+    });
+
+    let state;
+    try {
+      state = JSON.parse(localStorage.getItem("yinianchengxian-save")) || freshState();
+    } catch {
+      state = freshState();
+    }
+
+    const $ = id => document.getElementById(id);
+    const expNeed = () => 40 + state.realmIndex * 28;
+    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+    const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+    function addLog(message) {
+      const now = new Date();
+      const time = now.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+      state.log.unshift({ time, message });
+      state.log = state.log.slice(0, 35);
+      renderLog();
+    }
+
+    function renderLog() {
+      $("log").replaceChildren(...state.log.map(item => {
+        const row = document.createElement("div");
+        row.className = "entry";
+        const time = document.createElement("span");
+        time.className = "time";
+        time.textContent = item.time;
+        const text = document.createElement("span");
+        text.textContent = item.message;
+        row.append(time, text);
+        return row;
+      }));
+    }
+
+    function render() {
+      $("realm").textContent = realms[state.realmIndex];
+      $("expText").textContent = state.realmIndex === realms.length - 1
+        ? "已至仙境" : `${state.exp} / ${expNeed()}`;
+      $("hpText").textContent = `${state.hp} / ${state.maxHp}`;
+      $("qiText").textContent = `${state.qi} / ${state.maxQi}`;
+      $("stones").textContent = state.stones;
+      $("days").textContent = `第 ${state.days} 年`;
+      $("power").textContent = state.power;
+      $("mind").textContent = state.mind;
+      $("expBar").style.width = `${state.realmIndex === realms.length - 1 ? 100 : state.exp / expNeed() * 100}%`;
+      $("hpBar").style.width = `${state.hp / state.maxHp * 100}%`;
+      $("qiBar").style.width = `${state.qi / state.maxQi * 100}%`;
+      $("cultivateBtn").disabled = state.qi < 5 || state.realmIndex === realms.length - 1;
+      $("breakBtn").disabled = state.exp < expNeed() || state.qi < 15 || state.realmIndex === realms.length - 1;
+      $("exploreBtn").disabled = state.qi < 10 || state.hp <= 0;
+      $("restBtn").disabled = state.hp === state.maxHp && state.qi === state.maxQi;
+      renderLog();
+    }
+
+    function save() {
+      localStorage.setItem("yinianchengxian-save", JSON.stringify(state));
+    }
+
+    $("cultivateBtn").addEventListener("click", () => {
+      const gain = rand(12, 20) + Math.floor(state.mind / 2);
+      state.qi -= 5;
+      state.exp += gain;
+      state.days++;
+      if (state.exp > expNeed()) state.exp = expNeed();
+      addLog(`你凝神吐纳，修为增加 ${gain} 点。`);
+      render();
+    });
+
+    $("breakBtn").addEventListener("click", () => {
+      if (state.exp < expNeed() || state.qi < 15) return;
+      state.qi -= 15;
+      state.days++;
+      const chance = clamp(68 + state.mind * 2 - state.realmIndex * 2, 20, 92);
+      if (Math.random() * 100 < chance) {
+        state.realmIndex++;
+        state.exp = 0;
+        state.maxHp += 12;
+        state.hp = state.maxHp;
+        state.maxQi += 8;
+        state.qi = state.maxQi;
+        state.power += rand(8, 14);
+        state.mind++;
+        addLog(`灵台清明，突破成功！你晋升至「${realms[state.realmIndex]}」。气血与灵力已恢复。`);
+      } else {
+        state.hp = Math.max(1, state.hp - rand(12, 24));
+        state.exp = Math.floor(state.exp * 0.65);
+        addLog("突破失败，灵力反噬。修为有所退步，气血受损。");
+      }
+      render();
+    });
+
+    $("exploreBtn").addEventListener("click", () => {
+      state.qi -= 10;
+      state.days++;
+      const event = rand(1, 100);
+
+      if (event <= 35) {
+        const found = rand(8, 24);
+        state.stones += found;
+        addLog(`你在山间发现一处隐秘石洞，拾得 ${found} 枚灵石。`);
+      } else if (event <= 62) {
+        const gain = rand(10, 22);
+        state.exp = Math.min(expNeed(), state.exp + gain);
+        addLog(`你偶遇前辈留下的修行心得，修为增加 ${gain} 点。`);
+      } else if (event <= 88) {
+        const enemyPower = rand(8, 18) + state.realmIndex * 4;
+        if (state.power >= enemyPower) {
+          const reward = rand(10, 28);
+          state.stones += reward;
+          state.power += 2;
+          addLog(`你击退了山中妖兽，获得 ${reward} 枚灵石，战力略有精进。`);
+        } else {
+          const damage = rand(10, 25);
+          state.hp = Math.max(1, state.hp - damage);
+          addLog(`你遭遇强大妖兽，只得暂避锋芒，损失 ${damage} 点气血。`);
+        }
+      } else {
+        state.mind++;
+        state.qi = Math.min(state.maxQi, state.qi + 8);
+        addLog("云海之上顿悟一瞬，道心有所精进，灵力也恢复了些许。");
+      }
+      render();
+    });
+
+    $("restBtn").addEventListener("click", () => {
+      state.days++;
+      const heal = Math.min(state.maxHp - state.hp, rand(18, 30));
+      const qiGain = Math.min(state.maxQi - state.qi, rand(12, 20));
+      state.hp += heal;
+      state.qi += qiGain;
+      addLog(`你打坐调息，恢复 ${heal} 点气血与 ${qiGain} 点灵力。`);
+      render();
+    });
+
+    $("saveBtn").addEventListener("click", () => {
+      save();
+      addLog("修行记录已保存。");
+      render();
+    });
+
+    $("resetBtn").addEventListener("click", () => {
+      if (!confirm("确定放弃当前修为，重新踏上仙途吗？")) return;
+      state = freshState();
+      state.log.push({ time: "此刻", message: "你告别凡尘，重新踏上仙途。" });
+      save();
+      render();
+    });
+
+    if (state.log.length === 0) {
+      addLog("你来到青云山脚，仙门云雾缭绕。属于你的仙途，今日方始。");
+    }
+    render();
+  </script>
+</body>
+</html>
