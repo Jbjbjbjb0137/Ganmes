@@ -1,2 +1,2 @@
-# Ganmes
+# Games
 Without
