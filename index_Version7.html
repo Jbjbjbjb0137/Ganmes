@@ -152,6 +152,92 @@
         linear-gradient(180deg, rgba(10, 12, 12, .08), rgba(0, 0, 0, .28));
     }
 
+    #mobileControls {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      touch-action: none;
+      user-select: none;
+    }
+
+    #lookArea {
+      position: absolute;
+      inset: 0 0 0 35%;
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    #joystick {
+      position: absolute;
+      left: 24px;
+      bottom: 28px;
+      width: 136px;
+      height: 136px;
+      border: 2px solid rgba(255,255,255,.35);
+      border-radius: 50%;
+      background: rgba(255,255,255,.1);
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    #joystickKnob {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: rgba(220,220,220,.65);
+      border: 2px solid rgba(255,255,255,.8);
+      transform: translate(-50%, -50%);
+      transition: transform 0.05s linear;
+    }
+
+    .mobileButton {
+      position: absolute;
+      right: 24px;
+      width: 76px;
+      height: 76px;
+      padding: 0;
+      border-radius: 50%;
+      font-size: 15px;
+      letter-spacing: 1px;
+      pointer-events: auto;
+      touch-action: none;
+      user-select: none;
+    }
+
+    #fireButton { bottom: 34px; }
+    #reloadButton {
+      bottom: 124px;
+      width: 60px;
+      height: 60px;
+      right: 32px;
+      font-size: 13px;
+      background: rgba(70,70,70,.85);
+      border-color: #aaa;
+    }
+
+    body.mobile-playing #mobileControls {
+      display: block;
+    }
+
+    @media (pointer: coarse) {
+      #tips {
+        font-size: 12px;
+        letter-spacing: 0;
+      }
+
+      #hud {
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        font-size: 14px;
+      }
+    }
+
     @keyframes fade {
       from { opacity: .45; }
       to { opacity: 1; }
@@ -166,8 +252,8 @@
       <div id="subtitle">末日已经降临，活下去。</div>
       <button id="startButton">开始突围</button>
       <div id="tips">
-        WASD 移动　鼠标瞄准　左键射击　R 换弹<br />
-        点击开始后，将鼠标移入游戏画面
+        电脑：WASD 移动，鼠标瞄准，左键射击，R 换弹<br />
+        手机：左侧摇杆移动，右侧滑动转向，点击按钮射击/换弹
       </div>
     </div>
   </div>
@@ -178,6 +264,18 @@
     <div>弹药：<span id="ammo">12 / 12</span></div>
   </div>
   <div id="crosshair"></div>
+
+  <div id="mobileControls">
+    <div id="lookArea"></div>
+
+    <div id="joystick">
+      <div id="joystickKnob"></div>
+    </div>
+
+    <button id="fireButton" class="mobileButton" type="button">射击</button>
+    <button id="reloadButton" class="mobileButton" type="button">换弹</button>
+  </div>
+
   <div id="message">
     <div>
       <h2>突围失败</h2>
@@ -325,6 +423,7 @@
     const ammoLabel = document.querySelector("#ammo");
 
     const keys = {};
+    const mobileMove = { x: 0, y: 0 };
     const zombies = [];
     const clock = new THREE.Clock();
     const raycaster = new THREE.Raycaster();
@@ -339,6 +438,16 @@
     let spawnTimer = 0;
     let yaw = 0;
     let pitch = 0;
+    let joystickPointerId = null;
+    let lookPointerId = null;
+    let lookLastX = 0;
+    let lookLastY = 0;
+    let fireInterval = null;
+
+    const isTouchDevice = () =>
+      window.matchMedia("(pointer: coarse)").matches ||
+      "ontouchstart" in window ||
+      navigator.maxTouchPoints > 0;
 
     function updateHud() {
       healthLabel.textContent = Math.max(0, Math.ceil(health));
@@ -413,7 +522,10 @@
     }
 
     function shoot() {
-      if (!playing || !document.pointerLockElement || reloading) return;
+      if (!playing || reloading) return;
+
+      if (!isTouchDevice() && !document.pointerLockElement) return;
+
       const now = performance.now();
       if (now - lastShot < 230) return;
       lastShot = now;
@@ -463,6 +575,13 @@
       message.style.display = "grid";
       crosshair.style.display = "none";
       hud.style.display = "none";
+      document.body.classList.remove("mobile-playing");
+      mobileMove.x = 0;
+      mobileMove.y = 0;
+      if (fireInterval) {
+        clearInterval(fireInterval);
+        fireInterval = null;
+      }
     }
 
     function resetGame() {
@@ -481,12 +600,138 @@
       screen.style.display = "none";
       hud.style.display = "flex";
       crosshair.style.display = "block";
+      document.body.classList.add("mobile-playing");
+      playMobileControls();
       playing = true;
+      mobileMove.x = 0;
+      mobileMove.y = 0;
+      if (fireInterval) {
+        clearInterval(fireInterval);
+        fireInterval = null;
+      }
 
       for (let i = 0; i < 6; i++) makeZombie();
-      renderer.domElement.requestPointerLock();
+      if (!isTouchDevice()) {
+        renderer.domElement.requestPointerLock();
+      }
       updateHud();
     }
+
+    function playMobileControls() {
+      if (isTouchDevice()) {
+        document.body.classList.add("mobile-playing");
+      } else {
+        document.body.classList.remove("mobile-playing");
+      }
+    }
+
+    const joystick = document.querySelector("#joystick");
+    const joystickKnob = document.querySelector("#joystickKnob");
+    const lookArea = document.querySelector("#lookArea");
+    const fireButton = document.querySelector("#fireButton");
+    const reloadButton = document.querySelector("#reloadButton");
+
+    function updateJoystick(event) {
+      const rect = joystick.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const maxDistance = 42;
+
+      let dx = event.clientX - centerX;
+      let dy = event.clientY - centerY;
+      const distance = Math.hypot(dx, dy);
+
+      if (distance > maxDistance) {
+        dx = (dx / distance) * maxDistance;
+        dy = (dy / distance) * maxDistance;
+      }
+
+      mobileMove.x = dx / maxDistance;
+      mobileMove.y = dy / maxDistance;
+      joystickKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    }
+
+    function resetJoystick() {
+      joystickPointerId = null;
+      mobileMove.x = 0;
+      mobileMove.y = 0;
+      joystickKnob.style.transform = "translate(-50%, -50%)";
+    }
+
+    joystick.addEventListener("pointerdown", (event) => {
+      if (!playing) return;
+      event.preventDefault();
+      joystickPointerId = event.pointerId;
+      joystick.setPointerCapture(event.pointerId);
+      updateJoystick(event);
+    });
+
+    joystick.addEventListener("pointermove", (event) => {
+      if (event.pointerId === joystickPointerId) {
+        event.preventDefault();
+        updateJoystick(event);
+      }
+    });
+
+    joystick.addEventListener("pointerup", resetJoystick);
+    joystick.addEventListener("pointercancel", resetJoystick);
+
+    lookArea.addEventListener("pointerdown", (event) => {
+      if (!playing) return;
+      event.preventDefault();
+      lookPointerId = event.pointerId;
+      lookLastX = event.clientX;
+      lookLastY = event.clientY;
+      lookArea.setPointerCapture(event.pointerId);
+    });
+
+    lookArea.addEventListener("pointermove", (event) => {
+      if (!playing || event.pointerId !== lookPointerId) return;
+      event.preventDefault();
+
+      const dx = event.clientX - lookLastX;
+      const dy = event.clientY - lookLastY;
+      lookLastX = event.clientX;
+      lookLastY = event.clientY;
+
+      yaw -= dx * 0.005;
+      pitch -= dy * 0.005;
+      pitch = THREE.MathUtils.clamp(pitch, -1.35, 1.35);
+      camera.rotation.y = yaw;
+      camera.rotation.x = pitch;
+    });
+
+    function stopLooking(event) {
+      if (event.pointerId === lookPointerId) lookPointerId = null;
+    }
+
+    lookArea.addEventListener("pointerup", stopLooking);
+    lookArea.addEventListener("pointercancel", stopLooking);
+
+    fireButton.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      if (!playing) return;
+
+      shoot();
+      fireInterval = setInterval(shoot, 100);
+    });
+
+    function stopFiring(event) {
+      event.preventDefault();
+      if (fireInterval) {
+        clearInterval(fireInterval);
+        fireInterval = null;
+      }
+    }
+
+    fireButton.addEventListener("pointerup", stopFiring);
+    fireButton.addEventListener("pointercancel", stopFiring);
+    fireButton.addEventListener("pointerleave", stopFiring);
+
+    reloadButton.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      reload();
+    });
 
     document.querySelector("#startButton").addEventListener("click", resetGame);
     document.querySelector("#restartButton").addEventListener("click", resetGame);
@@ -500,7 +745,14 @@
     });
 
     renderer.domElement.addEventListener("click", () => {
-      if (playing && !document.pointerLockElement) {
+      if (!playing) return;
+
+      if (isTouchDevice()) {
+        shoot();
+        return;
+      }
+
+      if (!document.pointerLockElement) {
         renderer.domElement.requestPointerLock();
       } else {
         shoot();
@@ -526,7 +778,7 @@
     });
 
     document.addEventListener("mousedown", (event) => {
-      if (event.button === 0) shoot();
+      if (event.button === 0 && !isTouchDevice()) shoot();
     });
 
     function update(dt) {
@@ -540,6 +792,9 @@
       if (keys.KeyS) move.sub(forward);
       if (keys.KeyD) move.add(right);
       if (keys.KeyA) move.sub(right);
+
+      if (Math.abs(mobileMove.x) > 0.05) move.addScaledVector(right, mobileMove.x);
+      if (Math.abs(mobileMove.y) > 0.05) move.addScaledVector(forward, -mobileMove.y);
 
       if (move.lengthSq() > 0) {
         move.normalize().multiplyScalar(5 * dt);
