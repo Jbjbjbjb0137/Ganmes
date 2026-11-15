@@ -3,855 +3,308 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>人类的突围</title>
+  <title>开始对话</title>
   <style>
     * { box-sizing: border-box; }
+
     html, body {
       margin: 0;
-      width: 100%;
       height: 100%;
-      overflow: hidden;
-      background: #080b0c;
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #150d18;
       color: #fff;
-      font-family: "Microsoft YaHei", sans-serif;
     }
+
     body {
-      position: relative;
-      background:
-        radial-gradient(circle at center, rgba(34, 40, 36, 0.35), rgba(0,0,0,0.9) 70%),
-        #080b0c;
-    }
-    canvas { display: block; }
-
-    #screen, #hud, #message {
-      position: fixed;
-      z-index: 2;
-    }
-
-    #screen {
-      inset: 0;
       display: grid;
       place-items: center;
-      text-align: center;
+      padding: 20px;
       background:
-        radial-gradient(ellipse at center, rgba(42, 48, 43, .58), rgba(0, 0, 0, .96)),
-        #080b0c;
-    }
-    #screenContent { padding: 24px; }
-    #studio {
-      color: #c9d0c8;
-      font-size: 19px;
-      letter-spacing: 12px;
-      margin-bottom: 20px;
-      animation: fade 2s ease-in-out infinite alternate;
-    }
-    h1 {
-      margin: 0;
-      font-size: clamp(42px, 8vw, 82px);
-      letter-spacing: 8px;
-      text-shadow:
-        0 0 12px rgba(209, 58, 47, 0.6),
-        0 4px 24px rgba(209, 58, 47, 0.9);
-    }
-    #subtitle {
-      color: #b7b7b7;
-      margin: 18px 0 30px;
-      letter-spacing: 3px;
-    }
-    button {
-      border: 1px solid #d34a3d;
-      background: #a92c24;
-      color: white;
-      padding: 13px 36px;
-      font-size: 17px;
-      letter-spacing: 3px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 0 16px rgba(204, 74, 63, 0.35);
-    }
-    button:hover {
-      background: #d33b30;
-      transform: translateY(-1px);
-    }
-    #tips {
-      color: #aaa;
-      line-height: 1.9;
-      font-size: 13px;
-      margin-top: 22px;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.65);
-    }
-    #hud {
-      display: none;
-      top: 16px;
-      left: 18px;
-      right: 18px;
-      justify-content: space-between;
-      pointer-events: none;
-      text-shadow: 0 2px 6px #000;
-      font-size: 17px;
-      letter-spacing: 1px;
-      color: #f2f2f2;
-      z-index: 3;
-    }
-    #crosshair {
-      position: fixed;
-      display: none;
-      z-index: 3;
-      left: 50%;
-      top: 50%;
-      width: 18px;
-      height: 18px;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-      opacity: 0.95;
-    }
-    #crosshair::before, #crosshair::after {
-      content: "";
-      position: absolute;
-      background: rgba(255,255,255,0.9);
-      box-shadow: 0 0 10px rgba(255,255,255,0.5);
-    }
-    #crosshair::before {
-      width: 2px;
-      height: 18px;
-      left: 8px;
-    }
-    #crosshair::after {
-      width: 18px;
-      height: 2px;
-      top: 8px;
+        linear-gradient(rgba(25, 12, 22, 0.52), rgba(25, 12, 22, 0.52)),
+        url("photo.jpg") center center / cover no-repeat;
     }
 
-    #message {
-      display: none;
-      inset: 0;
-      place-items: center;
+    .chat-shell {
+      width: min(100%, 620px);
+      height: min(86vh, 760px);
+      display: flex;
+      flex-direction: column;
+      background: rgba(17, 15, 25, 0.68);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 24px;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.45);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: url("photo.jpg") center center / cover no-repeat;
+      border: 2px solid rgba(255,255,255,0.5);
+      flex-shrink: 0;
+    }
+
+    .name-wrap {
+      line-height: 1.2;
+    }
+
+    .name {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .status {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 3px;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #7ae7ad;
+      margin-right: 6px;
+      vertical-align: middle;
+      box-shadow: 0 0 8px rgba(122, 231, 173, 0.8);
+    }
+
+    .messages {
+      flex: 1;
+      padding: 18px 18px 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: rgba(0,0,0,0.05);
+    }
+
+    .welcome {
+      margin: auto auto 12px;
+      max-width: 70%;
       text-align: center;
-      background: rgba(0, 0, 0, .72);
-      z-index: 4;
-    }
-    #message h2 {
-      font-size: 48px;
-      color: #e14336;
-      text-shadow: 0 0 18px rgba(225,67,54,0.4);
-    }
-    #message p {
-      color: #ddd;
-      margin-bottom: 18px;
-      letter-spacing: 2px;
+      font-size: 14px;
+      line-height: 1.8;
+      color: rgba(255,255,255,0.72);
+      padding: 12px 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
     }
 
-    body::after {
-      content: "";
-      position: fixed;
-      inset: 0;
-      z-index: 1;
-      pointer-events: none;
-      background:
-        radial-gradient(ellipse at center, transparent 38%, rgba(0, 0, 0, .48) 100%),
-        linear-gradient(180deg, rgba(10, 12, 12, .08), rgba(0, 0, 0, .28));
+    .msg {
+      max-width: 82%;
+      padding: 12px 14px;
+      border-radius: 18px;
+      line-height: 1.8;
+      font-size: 16px;
+      word-break: break-word;
+      animation: fadeIn 0.28s ease;
     }
 
-    #mobileControls {
+    .msg.other {
+      align-self: flex-start;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-bottom-left-radius: 6px;
+      color: #f8f4ff;
+    }
+
+    .msg.self {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #ffd7df, #f4bfd7);
+      color: #2b1725;
+      border-bottom-right-radius: 6px;
+      box-shadow: 0 10px 22px rgba(255, 173, 202, 0.18);
+    }
+
+    .composer {
       display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 5;
-      pointer-events: none;
-      touch-action: none;
-      user-select: none;
+      gap: 10px;
+      padding: 14px 18px 18px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.02);
     }
 
-    #lookArea {
-      position: absolute;
-      inset: 0 0 0 35%;
-      pointer-events: auto;
-      touch-action: none;
+    .composer.visible {
+      display: flex;
     }
 
-    #joystick {
-      position: absolute;
-      left: 24px;
-      bottom: 28px;
-      width: 136px;
-      height: 136px;
-      border: 2px solid rgba(255,255,255,.35);
-      border-radius: 50%;
-      background: rgba(255,255,255,.1);
-      pointer-events: auto;
-      touch-action: none;
+    textarea {
+      flex: 1;
+      min-height: 52px;
+      max-height: 140px;
+      resize: vertical;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.04);
+      color: #fff;
+      font: inherit;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    #joystickKnob {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 58px;
-      height: 58px;
-      border-radius: 50%;
-      background: rgba(220,220,220,.65);
-      border: 2px solid rgba(255,255,255,.8);
-      transform: translate(-50%, -50%);
-      transition: transform 0.05s linear;
+    textarea:focus {
+      border-color: rgba(255, 204, 214, 0.9);
+      box-shadow: 0 0 0 3px rgba(255, 204, 214, 0.18);
     }
 
-    .mobileButton {
-      position: absolute;
-      right: 24px;
-      width: 76px;
-      height: 76px;
-      padding: 0;
-      border-radius: 50%;
+    .send-btn {
+      align-self: flex-end;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #ffdfe8, #f5bfd8);
+      color: #2d1b2d;
+      font-weight: 700;
       font-size: 15px;
-      letter-spacing: 1px;
-      pointer-events: auto;
-      touch-action: none;
-      user-select: none;
+      cursor: pointer;
+      padding: 12px 18px;
+      min-width: 84px;
+      transition: transform 0.2s ease, filter 0.2s ease;
     }
 
-    #fireButton { bottom: 34px; }
-    #reloadButton {
-      bottom: 124px;
-      width: 60px;
-      height: 60px;
-      right: 32px;
-      font-size: 13px;
-      background: rgba(70,70,70,.85);
-      border-color: #aaa;
+    .send-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.02);
     }
 
-    body.mobile-playing #mobileControls {
-      display: block;
+    .start-btn {
+      margin: 16px 18px 20px;
+      border: none;
+      border-radius: 16px;
+      padding: 15px 18px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #251926;
+      background: linear-gradient(135deg, #ffdfe8, #f0bbd1);
+      box-shadow: 0 16px 30px rgba(240, 187, 209, 0.28);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-    @media (pointer: coarse) {
-      #tips {
-        font-size: 12px;
-        letter-spacing: 0;
+    .start-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 34px rgba(240, 187, 209, 0.34);
+    }
+
+    .start-btn.hidden {
+      display: none;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
       }
-
-      #hud {
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        font-size: 14px;
+      to {
+        opacity: 1;
+        transform: translateY(0);
       }
     }
 
-    @keyframes fade {
-      from { opacity: .45; }
-      to { opacity: 1; }
+    @media (max-width: 520px) {
+      .chat-shell {
+        height: 90vh;
+      }
+      .msg {
+        font-size: 15px;
+      }
+      .composer {
+        gap: 8px;
+      }
+      .send-btn {
+        min-width: 72px;
+        padding-left: 12px;
+        padding-right: 12px;
+      }
     }
   </style>
 </head>
 <body>
-  <div id="screen">
-    <div id="screenContent">
-      <div id="studio">POOR STUDIO</div>
-      <h1>人类的突围</h1>
-      <div id="subtitle">末日已经降临，活下去。</div>
-      <button id="startButton">开始突围</button>
-      <div id="tips">
-        电脑：WASD 移动，鼠标瞄准，左键射击，R 换弹<br />
-        手机：左侧摇杆移动，右侧滑动转向，点击按钮射击/换弹
+  <div class="chat-shell">
+    <div class="topbar">
+      <div class="avatar"></div>
+      <div class="name-wrap">
+        <div class="name">HYH</div>
+        <div class="status"><span class="status-dot"></span>在线</div>
       </div>
     </div>
-  </div>
 
-  <div id="hud">
-    <div>生命：<span id="health">100</span></div>
-    <div>击杀：<span id="kills">0</span></div>
-    <div>弹药：<span id="ammo">12 / 12</span></div>
-  </div>
-  <div id="crosshair"></div>
-
-  <div id="mobileControls">
-    <div id="lookArea"></div>
-
-    <div id="joystick">
-      <div id="joystickKnob"></div>
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcomeText">
+        有一句话，<br>
+        我想认真地说给你听。
+      </div>
     </div>
 
-    <button id="fireButton" class="mobileButton" type="button">射击</button>
-    <button id="reloadButton" class="mobileButton" type="button">换弹</button>
-  </div>
-
-  <div id="message">
-    <div>
-      <h2>突围失败</h2>
-      <p>你没能逃离尸潮。</p>
-      <button id="restartButton">重新开始</button>
+    <div class="composer" id="composer">
+      <textarea id="replyInput" placeholder="编辑你的回复..."></textarea>
+      <button class="send-btn" id="sendBtn">发送</button>
     </div>
+
+    <button class="start-btn" id="startBtn">开始对话</button>
   </div>
 
-  <script type="module">
-    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+  <script>
+    const messages = document.getElementById("messages");
+    const composer = document.getElementById("composer");
+    const startBtn = document.getElementById("startBtn");
+    const sendBtn = document.getElementById("sendBtn");
+    const replyInput = document.getElementById("replyInput");
+    const welcomeText = document.getElementById("welcomeText");
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x171b1b);
-    scene.fog = new THREE.Fog(0x171b1b, 14, 78);
+    const firstMessage = "HYH，我喜欢你很久了，整整990天。";
 
-    const camera = new THREE.PerspectiveCamera(
-      75, window.innerWidth / window.innerHeight, 0.1, 150
-    );
-    camera.position.set(0, 1.7, 5);
-    camera.rotation.order = "YXZ";
-
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      powerPreference: "high-performance"
-    });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    document.body.appendChild(renderer.domElement);
-
-    scene.add(new THREE.HemisphereLight(0x9aa7a2, 0x171a18, 1.15));
-
-    const sun = new THREE.DirectionalLight(0xc8d3c8, 2.4);
-    sun.position.set(-10, 18, 8);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    sun.shadow.camera.left = -35;
-    sun.shadow.camera.right = 35;
-    sun.shadow.camera.top = 35;
-    sun.shadow.camera.bottom = -35;
-    sun.shadow.bias = -0.00015;
-    scene.add(sun);
-
-    // 地面
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(200, 200),
-      new THREE.MeshStandardMaterial({
-        color: 0x4d544f,
-        roughness: 1,
-        metalness: 0.04
-      })
-    );
-    ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
-    scene.add(ground);
-
-    const road = new THREE.Mesh(
-      new THREE.PlaneGeometry(9, 200),
-      new THREE.MeshStandardMaterial({
-        color: 0x2a2f2d,
-        roughness: 1,
-        metalness: 0.06
-      })
-    );
-    road.rotation.x = -Math.PI / 2;
-    road.position.y = 0.015;
-    scene.add(road);
-
-    // 路面划线：更明显
-    const roadMarkColor = new THREE.MeshStandardMaterial({
-      color: 0xc0bfb2,
-      emissive: 0x17140d,
-      roughness: 0.7
-    });
-    for (let i = -12; i <= 12; i += 2) {
-      const mark = new THREE.Mesh(
-        new THREE.BoxGeometry(0.18, 0.02, 1.6),
-        roadMarkColor
-      );
-      mark.position.set(0, 0.02, i * 6);
-      scene.add(mark);
+    function addMessage(text, type) {
+      const bubble = document.createElement("div");
+      bubble.className = "msg " + type;
+      bubble.textContent = text;
+      messages.appendChild(bubble);
+      messages.scrollTop = messages.scrollHeight;
     }
 
-    const obstacleMaterial = new THREE.MeshStandardMaterial({
-      color: 0x4b433e,
-      roughness: 1
+    startBtn.addEventListener("click", function () {
+      startBtn.classList.add("hidden");
+      composer.classList.add("visible");
+      welcomeText.style.display = "none";
+
+      addMessage(firstMessage, "other");
+      replyInput.focus();
     });
 
-    // 建筑残骸 / 道具
-    for (let i = 0; i < 32; i++) {
-      const side = i % 2 ? 1 : -1;
-      const density = 2 + Math.random() * 3;
-      const height = 2 + Math.random() * 5;
-      const box = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          density,
-          height,
-          2 + Math.random() * 3
-        ),
-        obstacleMaterial
-      );
-      box.position.set(
-        side * (7 + Math.random() * 9),
-        height / 2,
-        -i * 6 - Math.random() * 4
-      );
-      box.rotation.y = Math.random() * 0.8;
-      box.castShadow = true;
-      box.receiveShadow = true;
-      scene.add(box);
-    }
+    sendBtn.addEventListener("click", function () {
+      const value = replyInput.value.trim();
 
-    // 浮尘
-    const dustCount = 420;
-    const dustPositions = new Float32Array(dustCount * 3);
-    for (let i = 0; i < dustCount; i++) {
-      dustPositions[i * 3] = (Math.random() - 0.5) * 36;
-      dustPositions[i * 3 + 1] = Math.random() * 7;
-      dustPositions[i * 3 + 2] = -Math.random() * 70;
-    }
-    const dustGeometry = new THREE.BufferGeometry();
-    dustGeometry.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
-    const dust = new THREE.Points(
-      dustGeometry,
-      new THREE.PointsMaterial({
-        color: 0xc7b89e,
-        size: 0.06,
-        transparent: true,
-        opacity: 0.38,
-        depthWrite: false
-      })
-    );
-    scene.add(dust);
-
-    const screen = document.querySelector("#screen");
-    const hud = document.querySelector("#hud");
-    const crosshair = document.querySelector("#crosshair");
-    const message = document.querySelector("#message");
-    const healthLabel = document.querySelector("#health");
-    const killsLabel = document.querySelector("#kills");
-    const ammoLabel = document.querySelector("#ammo");
-
-    const keys = {};
-    const mobileMove = { x: 0, y: 0 };
-    const zombies = [];
-    const clock = new THREE.Clock();
-    const raycaster = new THREE.Raycaster();
-    raycaster.far = 45;
-
-    let playing = false;
-    let health = 100;
-    let kills = 0;
-    let ammo = 12;
-    let reloading = false;
-    let lastShot = 0;
-    let spawnTimer = 0;
-    let yaw = 0;
-    let pitch = 0;
-    let joystickPointerId = null;
-    let lookPointerId = null;
-    let lookLastX = 0;
-    let lookLastY = 0;
-    let fireInterval = null;
-
-    const isTouchDevice = () =>
-      window.matchMedia("(pointer: coarse)").matches ||
-      "ontouchstart" in window ||
-      navigator.maxTouchPoints > 0;
-
-    function updateHud() {
-      healthLabel.textContent = Math.max(0, Math.ceil(health));
-      killsLabel.textContent = kills;
-      ammoLabel.textContent = `${ammo} / 12${reloading ? "（装填中）" : ""}`;
-    }
-
-    function makeZombie() {
-      const zombie = new THREE.Group();
-
-      const skin = new THREE.MeshStandardMaterial({
-        color: Math.random() > 0.5 ? 0x767c6c : 0x7a756e,
-        roughness: 1,
-        metalness: 0.02
-      });
-
-      const clothes = new THREE.MeshStandardMaterial({
-        color: [0x313a38, 0x4d413d, 0x3d3f47][Math.floor(Math.random() * 3)],
-        roughness: 1
-      });
-
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.72, 1.05, 0.38), clothes);
-      body.position.y = 1.05;
-      body.castShadow = true;
-      zombie.add(body);
-
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 18, 16), skin);
-      head.position.y = 1.8;
-      head.castShadow = true;
-      zombie.add(head);
-
-      const eyeMaterial = new THREE.MeshStandardMaterial({
-        color: 0x4d0404,
-        emissive: 0xff150a,
-        emissiveIntensity: 2.7,
-        roughness: 0.25
-      });
-
-      for (const side of [-1, 1]) {
-        const eye = new THREE.Mesh(
-          new THREE.SphereGeometry(0.05, 12, 10),
-          eyeMaterial
-        );
-        eye.position.set(side * 0.105, 1.82, 0.265);
-        zombie.add(eye);
-      }
-
-      for (const side of [-1, 1]) {
-        const arm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.8, 0.2), skin);
-        arm.position.set(side * 0.48, 1.1, -0.02);
-        arm.rotation.z = side * -0.2;
-        arm.castShadow = true;
-        zombie.add(arm);
-
-        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.75, 0.25), clothes);
-        leg.position.set(side * 0.19, 0.38, 0);
-        leg.castShadow = true;
-        zombie.add(leg);
-      }
-
-      const angle = Math.random() * Math.PI * 2;
-      const distance = 22 + Math.random() * 18;
-      zombie.position.set(
-        camera.position.x + Math.cos(angle) * distance,
-        0,
-        camera.position.z + Math.sin(angle) * distance
-      );
-      zombie.userData.speed = 0.65 + Math.random() * 0.42;
-      zombie.userData.hitCooldown = 0;
-      scene.add(zombie);
-      zombies.push(zombie);
-    }
-
-    function shoot() {
-      if (!playing || reloading) return;
-
-      if (!isTouchDevice() && !document.pointerLockElement) return;
-
-      const now = performance.now();
-      if (now - lastShot < 230) return;
-      lastShot = now;
-
-      if (ammo <= 0) {
-        reload();
-        return;
-      }
-      ammo--;
-      updateHud();
-
-      raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-
-      const hitTargets = [];
-      for (const zombie of zombies) {
-        hitTargets.push(...zombie.children);
-      }
-
-      const hits = raycaster.intersectObjects(hitTargets, false);
-      if (hits.length) {
-        const zombie = hits[0].object.parent;
-        if (zombie && zombies.includes(zombie)) {
-          scene.remove(zombie);
-          const idx = zombies.indexOf(zombie);
-          if (idx >= 0) zombies.splice(idx, 1);
-          kills++;
-          updateHud();
-        }
-      }
-    }
-
-    function reload() {
-      if (reloading || ammo === 12 || !playing) return;
-      reloading = true;
-      updateHud();
-      setTimeout(() => {
-        if (!playing) return;
-        ammo = 12;
-        reloading = false;
-        updateHud();
-      }, 1200);
-    }
-
-    function endGame() {
-      playing = false;
-      document.exitPointerLock?.();
-      message.style.display = "grid";
-      crosshair.style.display = "none";
-      hud.style.display = "none";
-      document.body.classList.remove("mobile-playing");
-      mobileMove.x = 0;
-      mobileMove.y = 0;
-      if (fireInterval) {
-        clearInterval(fireInterval);
-        fireInterval = null;
-      }
-    }
-
-    function resetGame() {
-      for (const zombie of zombies) scene.remove(zombie);
-      zombies.length = 0;
-      health = 100;
-      kills = 0;
-      ammo = 12;
-      reloading = false;
-      camera.position.set(0, 1.7, 5);
-      yaw = 0;
-      pitch = 0;
-      camera.rotation.y = 0;
-      camera.rotation.x = 0;
-      message.style.display = "none";
-      screen.style.display = "none";
-      hud.style.display = "flex";
-      crosshair.style.display = "block";
-      document.body.classList.add("mobile-playing");
-      playMobileControls();
-      playing = true;
-      mobileMove.x = 0;
-      mobileMove.y = 0;
-      if (fireInterval) {
-        clearInterval(fireInterval);
-        fireInterval = null;
-      }
-
-      for (let i = 0; i < 6; i++) makeZombie();
-      if (!isTouchDevice()) {
-        renderer.domElement.requestPointerLock();
-      }
-      updateHud();
-    }
-
-    function playMobileControls() {
-      if (isTouchDevice()) {
-        document.body.classList.add("mobile-playing");
-      } else {
-        document.body.classList.remove("mobile-playing");
-      }
-    }
-
-    const joystick = document.querySelector("#joystick");
-    const joystickKnob = document.querySelector("#joystickKnob");
-    const lookArea = document.querySelector("#lookArea");
-    const fireButton = document.querySelector("#fireButton");
-    const reloadButton = document.querySelector("#reloadButton");
-
-    function updateJoystick(event) {
-      const rect = joystick.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const maxDistance = 42;
-
-      let dx = event.clientX - centerX;
-      let dy = event.clientY - centerY;
-      const distance = Math.hypot(dx, dy);
-
-      if (distance > maxDistance) {
-        dx = (dx / distance) * maxDistance;
-        dy = (dy / distance) * maxDistance;
-      }
-
-      mobileMove.x = dx / maxDistance;
-      mobileMove.y = dy / maxDistance;
-      joystickKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-    }
-
-    function resetJoystick() {
-      joystickPointerId = null;
-      mobileMove.x = 0;
-      mobileMove.y = 0;
-      joystickKnob.style.transform = "translate(-50%, -50%)";
-    }
-
-    joystick.addEventListener("pointerdown", (event) => {
-      if (!playing) return;
-      event.preventDefault();
-      joystickPointerId = event.pointerId;
-      joystick.setPointerCapture(event.pointerId);
-      updateJoystick(event);
-    });
-
-    joystick.addEventListener("pointermove", (event) => {
-      if (event.pointerId === joystickPointerId) {
-        event.preventDefault();
-        updateJoystick(event);
-      }
-    });
-
-    joystick.addEventListener("pointerup", resetJoystick);
-    joystick.addEventListener("pointercancel", resetJoystick);
-
-    lookArea.addEventListener("pointerdown", (event) => {
-      if (!playing) return;
-      event.preventDefault();
-      lookPointerId = event.pointerId;
-      lookLastX = event.clientX;
-      lookLastY = event.clientY;
-      lookArea.setPointerCapture(event.pointerId);
-    });
-
-    lookArea.addEventListener("pointermove", (event) => {
-      if (!playing || event.pointerId !== lookPointerId) return;
-      event.preventDefault();
-
-      const dx = event.clientX - lookLastX;
-      const dy = event.clientY - lookLastY;
-      lookLastX = event.clientX;
-      lookLastY = event.clientY;
-
-      yaw -= dx * 0.005;
-      pitch -= dy * 0.005;
-      pitch = THREE.MathUtils.clamp(pitch, -1.35, 1.35);
-      camera.rotation.y = yaw;
-      camera.rotation.x = pitch;
-    });
-
-    function stopLooking(event) {
-      if (event.pointerId === lookPointerId) lookPointerId = null;
-    }
-
-    lookArea.addEventListener("pointerup", stopLooking);
-    lookArea.addEventListener("pointercancel", stopLooking);
-
-    fireButton.addEventListener("pointerdown", (event) => {
-      event.preventDefault();
-      if (!playing) return;
-
-      shoot();
-      fireInterval = setInterval(shoot, 100);
-    });
-
-    function stopFiring(event) {
-      event.preventDefault();
-      if (fireInterval) {
-        clearInterval(fireInterval);
-        fireInterval = null;
-      }
-    }
-
-    fireButton.addEventListener("pointerup", stopFiring);
-    fireButton.addEventListener("pointercancel", stopFiring);
-    fireButton.addEventListener("pointerleave", stopFiring);
-
-    reloadButton.addEventListener("pointerdown", (event) => {
-      event.preventDefault();
-      reload();
-    });
-
-    document.querySelector("#startButton").addEventListener("click", resetGame);
-    document.querySelector("#restartButton").addEventListener("click", resetGame);
-
-    document.addEventListener("pointerlockchange", () => {
-      if (playing && !document.pointerLockElement) {
-        crosshair.style.opacity = "0.5";
-      } else {
-        crosshair.style.opacity = "1";
-      }
-    });
-
-    renderer.domElement.addEventListener("click", () => {
-      if (!playing) return;
-
-      if (isTouchDevice()) {
-        shoot();
+      if (!value) {
+        replyInput.focus();
+        replyInput.placeholder = "先写一点内容再发送哦";
         return;
       }
 
-      if (!document.pointerLockElement) {
-        renderer.domElement.requestPointerLock();
-      } else {
-        shoot();
-      }
+      addMessage(value, "self");
+      replyInput.value = "";
+      replyInput.placeholder = "编辑你的回复...";
+      replyInput.focus();
     });
 
-    document.addEventListener("mousemove", (event) => {
-      if (!playing || !document.pointerLockElement) return;
-      yaw -= event.movementX * 0.002;
-      pitch -= event.movementY * 0.002;
-      pitch = THREE.MathUtils.clamp(pitch, -1.35, 1.35);
-      camera.rotation.y = yaw;
-      camera.rotation.x = pitch;
-    });
-
-    document.addEventListener("keydown", (event) => {
-      keys[event.code] = true;
-      if (event.code === "KeyR") reload();
-    });
-
-    document.addEventListener("keyup", (event) => {
-      keys[event.code] = false;
-    });
-
-    document.addEventListener("mousedown", (event) => {
-      if (event.button === 0 && !isTouchDevice()) shoot();
-    });
-
-    function update(dt) {
-      if (!playing) return;
-
-      const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
-      const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-      const move = new THREE.Vector3();
-
-      if (keys.KeyW) move.add(forward);
-      if (keys.KeyS) move.sub(forward);
-      if (keys.KeyD) move.add(right);
-      if (keys.KeyA) move.sub(right);
-
-      if (Math.abs(mobileMove.x) > 0.05) move.addScaledVector(right, mobileMove.x);
-      if (Math.abs(mobileMove.y) > 0.05) move.addScaledVector(forward, -mobileMove.y);
-
-      if (move.lengthSq() > 0) {
-        move.normalize().multiplyScalar(5 * dt);
-        camera.position.add(move);
+    replyInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendBtn.click();
       }
-
-      camera.position.x = THREE.MathUtils.clamp(camera.position.x, -35, 35);
-      camera.position.z = THREE.MathUtils.clamp(camera.position.z, -100, 20);
-
-      // 玩家被撞击
-      for (const zombie of zombies) {
-        const dx = camera.position.x - zombie.position.x;
-        const dz = camera.position.z - zombie.position.z;
-        const distance = Math.hypot(dx, dz);
-
-        if (distance > 1.25) {
-          zombie.position.x += (dx / distance) * zombie.userData.speed * dt;
-          zombie.position.z += (dz / distance) * zombie.userData.speed * dt;
-          zombie.rotation.y = Math.atan2(dx, dz);
-        } else {
-          zombie.userData.hitCooldown -= dt;
-          if (zombie.userData.hitCooldown <= 0) {
-            health -= 10;
-            zombie.userData.hitCooldown = 1;
-            updateHud();
-            if (health <= 0) endGame();
-          }
-        }
-      }
-
-      // 产怪
-      spawnTimer += dt;
-      if (spawnTimer > 4 && zombies.length < 12) {
-        spawnTimer = 0;
-        makeZombie();
-      }
-
-      // 轻微镜头抖动和空气漂浮
-      if (dust) {
-        dust.rotation.y += dt * 0.03;
-        dust.position.x = camera.position.x * 0.04;
-        dust.position.z = camera.position.z * 0.04;
-      }
-    }
-
-    function animate() {
-      requestAnimationFrame(animate);
-      const dt = Math.min(clock.getDelta(), 0.05);
-      update(dt);
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    window.addEventListener("resize", () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
     });
   </script>
 </body>
